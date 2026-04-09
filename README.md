@@ -50,3 +50,13 @@ g++ main.cpp -o simulation -lglfw -lGL -lm
 ```
 
 (For Windows or MacOS, adjust libraries accordingly.)
+
+---
+
+## Windows Prebuilt Binary
+
+A statically linked 64-bit Windows executable is included in this repository:
+
+- `simulation-windows-x64.exe`
+
+You can run it directly on Windows without installing GLFW separately.
