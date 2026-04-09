@@ -1,13 +1,16 @@
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include <iostream>
 #include <cmath>
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iomanip>
 
 // Madhësia e dritares
 const int WIDTH = 1200;
 const int HEIGHT = 800;
+constexpr float PI = 3.14159265358979323846f;
 
 // Parametrat e simulimit
 struct Paramatrat {
@@ -40,9 +43,28 @@ struct Pika {
 };
 std::vector<Pika> rruga;
 
+bool normalizeVec3(float& x, float& y, float& z) {
+    float len = std::sqrt(x * x + y * y + z * z);
+    if (len < 1e-6f) {
+        return false;
+    }
+    x /= len;
+    y /= len;
+    z /= len;
+    return true;
+}
+
+void crossVec3(float ax, float ay, float az,
+               float bx, float by, float bz,
+               float& rx, float& ry, float& rz) {
+    rx = ay * bz - az * by;
+    ry = az * bx - ax * bz;
+    rz = ax * by - ay * bx;
+}
+
 // Funksion për të llogaritur matricën e projektimit të perspektivës
 void setPerspective(float fovy, float aspect, float zNear, float zFar) {
-    float f = 1.0f / tan(fovy * 0.5f * M_PI / 180.0f);
+    float f = 1.0f / std::tan(fovy * 0.5f * PI / 180.0f);
     
     float matrix[16] = {
         f / aspect, 0.0f, 0.0f, 0.0f,
@@ -61,24 +83,35 @@ void setLookAt(float eyeX, float eyeY, float eyeZ,
     float fx = centerX - eyeX;
     float fy = centerY - eyeY;
     float fz = centerZ - eyeZ;
-    
-    // Normalizo vektorin f
-    float fLength = sqrt(fx*fx + fy*fy + fz*fz);
-    fx /= fLength; fy /= fLength; fz /= fLength;
-    
-    // Llogarit vektorin s (djathtas)
-    float sx = fy * upZ - fz * upY;
-    float sy = fz * upX - fx * upZ;
-    float sz = fx * upY - fy * upX;
-    
-    // Normalizo vektorin s
-    float sLength = sqrt(sx*sx + sy*sy + sz*sz);
-    sx /= sLength; sy /= sLength; sz /= sLength;
-    
+
+    // Shmang ndarjen me zero kur kamera dhe qendra përputhen
+    if (!normalizeVec3(fx, fy, fz)) {
+        return;
+    }
+
+    // Llogarit vektorin s (djathtas) nga f × up
+    float sx, sy, sz;
+    crossVec3(fx, fy, fz, upX, upY, upZ, sx, sy, sz);
+
+    // Nëse up është paralel me drejtimin e shikimit, përdor një up alternativ
+    if (!normalizeVec3(sx, sy, sz)) {
+        float altUpX = 0.0f;
+        float altUpY = 1.0f;
+        float altUpZ = 0.0f;
+        if (std::fabs(fy) > 0.99f) {
+            altUpX = 1.0f;
+            altUpY = 0.0f;
+            altUpZ = 0.0f;
+        }
+        crossVec3(fx, fy, fz, altUpX, altUpY, altUpZ, sx, sy, sz);
+        if (!normalizeVec3(sx, sy, sz)) {
+            return;
+        }
+    }
+
     // Llogarit vektorin u (lart)
-    float ux = sy * fz - sz * fy;
-    float uy = sz * fx - sx * fz;
-    float uz = sx * fy - sy * fx;
+    float ux, uy, uz;
+    crossVec3(sx, sy, sz, fx, fy, fz, ux, uy, uz);
     
     float matrix[16] = {
         sx, ux, -fx, 0.0f,
@@ -103,24 +136,24 @@ void drawSphere(float x, float y, float z, float radius, int segments = 12) {
     // Rrethi horizontal (XY plane)
     glBegin(GL_LINE_LOOP);
     for (int i = 0; i < segments; i++) {
-        float angle = 2.0f * M_PI * i / segments;
-        glVertex3f(radius * cos(angle), radius * sin(angle), 0);
+        float angle = 2.0f * PI * i / segments;
+        glVertex3f(radius * std::cos(angle), radius * std::sin(angle), 0);
     }
     glEnd();
     
     // Rrethi vertikal (XZ plane)
     glBegin(GL_LINE_LOOP);
     for (int i = 0; i < segments; i++) {
-        float angle = 2.0f * M_PI * i / segments;
-        glVertex3f(radius * cos(angle), 0, radius * sin(angle));
+        float angle = 2.0f * PI * i / segments;
+        glVertex3f(radius * std::cos(angle), 0, radius * std::sin(angle));
     }
     glEnd();
     
     // Rrethi vertikal (YZ plane)
     glBegin(GL_LINE_LOOP);
     for (int i = 0; i < segments; i++) {
-        float angle = 2.0f * M_PI * i / segments;
-        glVertex3f(0, radius * cos(angle), radius * sin(angle));
+        float angle = 2.0f * PI * i / segments;
+        glVertex3f(0, radius * std::cos(angle), radius * std::sin(angle));
     }
     glEnd();
     
@@ -129,8 +162,8 @@ void drawSphere(float x, float y, float z, float radius, int segments = 12) {
     glBegin(GL_TRIANGLE_FAN);
     glVertex3f(0, 0, 0);
     for (int i = 0; i <= segments; i++) {
-        float angle = 2.0f * M_PI * i / segments;
-        glVertex3f(radius * cos(angle), radius * sin(angle), 0);
+        float angle = 2.0f * PI * i / segments;
+        glVertex3f(radius * std::cos(angle), radius * std::sin(angle), 0);
     }
     glEnd();
     
@@ -141,8 +174,8 @@ void drawSphere(float x, float y, float z, float radius, int segments = 12) {
 void drawCircle(float cx, float cy, float cz, float radius, int segments = 50) {
     glBegin(GL_LINE_LOOP);
     for (int i = 0; i < segments; i++) {
-        float angle = 2.0f * M_PI * i / segments;
-        glVertex3f(cx + radius * cos(angle), cy + radius * sin(angle), cz);
+        float angle = 2.0f * PI * i / segments;
+        glVertex3f(cx + radius * std::cos(angle), cy + radius * std::sin(angle), cz);
     }
     glEnd();
 }
@@ -163,7 +196,7 @@ void drawArrow(float x1, float y1, float z1, float x2, float y2, float z2,
     float dx = x2 - x1;
     float dy = y2 - y1;
     float dz = z2 - z1;
-    float length = sqrt(dx*dx + dy*dy + dz*dz);
+    float length = std::sqrt(dx*dx + dy*dy + dz*dz);
     
     if (length > 0.01f) {
         dx /= length;
@@ -172,7 +205,7 @@ void drawArrow(float x1, float y1, float z1, float x2, float y2, float z2,
         
         // Gjej një vektor pingul (për drejtimin e kokës)
         float px, py, pz;
-        if (fabs(dx) > 0.1f || fabs(dy) > 0.1f) {
+        if (std::fabs(dx) > 0.1f || std::fabs(dy) > 0.1f) {
             px = -dy;
             py = dx;
             pz = 0;
@@ -183,7 +216,7 @@ void drawArrow(float x1, float y1, float z1, float x2, float y2, float z2,
         }
         
         // Normalizo pingulen
-        float pLength = sqrt(px*px + py*py + pz*pz);
+        float pLength = std::sqrt(px*px + py*py + pz*pz);
         if (pLength > 0.01f) {
             px /= pLength;
             py /= pLength;
@@ -268,16 +301,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             case GLFW_KEY_LEFT:  params.rrezja = std::max(0.5f, params.rrezja - 0.2f); break;
             case GLFW_KEY_W:     params.masa += 0.1f; break;
             case GLFW_KEY_S:     params.masa = std::max(0.1f, params.masa - 0.1f); break;
-            case GLFW_KEY_EQUAL: params.shkallaVizuale += 0.05f; break;
-            case GLFW_KEY_MINUS: params.shkallaVizuale = std::max(0.01f, params.shkallaVizuale - 0.05f); break;
+            case GLFW_KEY_EQUAL:
+            case GLFW_KEY_KP_ADD:
+                params.shkallaVizuale += 0.05f;
+                break;
+            case GLFW_KEY_MINUS:
+            case GLFW_KEY_KP_SUBTRACT:
+                params.shkallaVizuale = std::max(0.01f, params.shkallaVizuale - 0.05f);
+                break;
             
             // Kontrolli i kameras
             case GLFW_KEY_A: cameraAngleX -= 5.0f; break;
             case GLFW_KEY_D: cameraAngleX += 5.0f; break;
-            case GLFW_KEY_Q: cameraAngleY -= 5.0f; break;
-            case GLFW_KEY_E: cameraAngleY += 5.0f; break;
-            case GLFW_KEY_Z: cameraDistance -= 1.0f; break;
-            case GLFW_KEY_X: cameraDistance += 1.0f; break;
+            case GLFW_KEY_Q: cameraAngleY = std::max(5.0f, cameraAngleY - 5.0f); break;
+            case GLFW_KEY_E: cameraAngleY = std::min(175.0f, cameraAngleY + 5.0f); break;
+            case GLFW_KEY_Z: cameraDistance = std::max(2.0f, cameraDistance - 1.0f); break;
+            case GLFW_KEY_X: cameraDistance = std::min(80.0f, cameraDistance + 1.0f); break;
             
             // Kontrolli i vizualizimit (MODIFIKUAR)
             case GLFW_KEY_1: params.shfaqForcenCentripetale = !params.shfaqForcenCentripetale; break;
@@ -304,7 +343,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 std::string getPhysicsInfo() {
     float Fc = params.masa * params.omega * params.omega * params.rrezja;
     float v = params.omega * params.rrezja;
-    float T = 2.0f * M_PI / params.omega;
+    float T = 2.0f * PI / params.omega;
     float ac = v * v / params.rrezja;  // Nxitimi centripetal
     
     std::ostringstream oss;
@@ -377,6 +416,14 @@ int main() {
         double currentTime = glfwGetTime();
         float deltaTime = currentTime - lastTime;
         lastTime = currentTime;
+
+        int framebufferWidth = 0;
+        int framebufferHeight = 0;
+        glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
+        if (framebufferWidth <= 0 || framebufferHeight <= 0) {
+            glfwPollEvents();
+            continue;
+        }
         
         // Përditëso fizikën nëse nuk është pauzuar
         if (!params.pauzuar) {
@@ -395,9 +442,12 @@ int main() {
         }
         
         frameCount++;
-        if (currentTime - lastFPSUpdate >= 1.0) {
-            std::string title = getPhysicsInfo();
-            glfwSetWindowTitle(window, title.c_str());
+        double elapsed = currentTime - lastFPSUpdate;
+        if (elapsed >= 1.0) {
+            double fps = frameCount / elapsed;
+            std::ostringstream title;
+            title << getPhysicsInfo() << " | FPS=" << std::fixed << std::setprecision(1) << fps;
+            glfwSetWindowTitle(window, title.str().c_str());
             frameCount = 0;
             lastFPSUpdate = currentTime;
         }
@@ -405,12 +455,13 @@ int main() {
         // Pastro buffers
         glClearColor(0.08f, 0.08f, 0.12f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, framebufferWidth, framebufferHeight);
         
         // Konfiguro pamjen
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         
-        float aspect = (float)WIDTH / (float)HEIGHT;
+        float aspect = static_cast<float>(framebufferWidth) / static_cast<float>(framebufferHeight);
         
         if (params.perspektiva3D) {
             // Perspektivë 3D
@@ -425,9 +476,9 @@ int main() {
         glLoadIdentity();
         
         // Poziciono kamerën
-        float camX = cameraDistance * sin(cameraAngleY * M_PI / 180.0f) * cos(cameraAngleX * M_PI / 180.0f);
-        float camZ = cameraDistance * sin(cameraAngleY * M_PI / 180.0f) * sin(cameraAngleX * M_PI / 180.0f);
-        float camY = cameraDistance * cos(cameraAngleY * M_PI / 180.0f);
+        float camX = cameraDistance * std::sin(cameraAngleY * PI / 180.0f) * std::cos(cameraAngleX * PI / 180.0f);
+        float camZ = cameraDistance * std::sin(cameraAngleY * PI / 180.0f) * std::sin(cameraAngleX * PI / 180.0f);
+        float camY = cameraDistance * std::cos(cameraAngleY * PI / 180.0f);
         
         setLookAt(camX, camY, camZ,  // Pozicioni i kamerës
                   0.0f, 0.0f, 0.0f,  // Pika ku shikon
@@ -466,9 +517,9 @@ int main() {
         // Llogarit forcat dhe vektorët
         float Fc = params.masa * params.omega * params.omega * params.rrezja;
         float v = params.omega * params.rrezja;
-        float angle = atan2(objY, objX);
-        float cosA = cos(angle);
-        float sinA = sin(angle);
+        float angle = std::atan2(objY, objX);
+        float cosA = std::cos(angle);
+        float sinA = std::sin(angle);
         
         // Vizato FORCËN CENTRIPETALE (BLLU - drejt qendrës)
         if (params.shfaqForcenCentripetale) {
@@ -507,7 +558,7 @@ int main() {
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
         glLoadIdentity();
-        glOrtho(0, WIDTH, HEIGHT, 0, -1, 1);
+        glOrtho(0, framebufferWidth, framebufferHeight, 0, -1, 1);
         
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix();

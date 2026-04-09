@@ -46,9 +46,7 @@ It is designed for educational purposes, ideal for high school physics students.
 
 ```bash
 g++ main.cpp -o simulation -lglfw -lGL -lm
-
-    Run the simulation:
-
 ./simulation
+```
 
 (For Windows or MacOS, adjust libraries accordingly.)
