@@ -1,6 +1,6 @@
 # 3D Centripetal & Centrifugal Force Simulation
 
-An interactive 3D physics simulation demonstrating centripetal and centrifugal forces on an object in uniform circular motion. Built with **Flutter/Dart** using a custom software 3D renderer.
+An interactive 3D physics simulation demonstrating centripetal and centrifugal forces on an object in uniform circular motion. Built for a physics class project.
 
 > **F = mω²r**
 
@@ -111,6 +111,6 @@ linux/                     # Linux platform runner
 
 ---
 
-## License
+## About
 
-This project is open source. Use it however you like.
+Made this for my physics class to visualize centripetal and centrifugal force. Figured I'd share it in case anyone else finds it useful. Feel free to use it however you like.
