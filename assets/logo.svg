@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0a0a14"/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  
+  <!-- Grid lines (faint) -->
+  <line x1="28" y1="128" x2="228" y2="128" stroke="#2a2a3e" stroke-width="0.5"/>
+  <line x1="128" y1="28" x2="128" y2="228" stroke="#2a2a3e" stroke-width="0.5"/>
+  
+  <!-- Orbit ring -->
+  <circle cx="128" cy="128" r="70" fill="none" stroke="#606078" stroke-width="2" stroke-dasharray="4,2"/>
+  
+  <!-- Center dot -->
+  <circle cx="128" cy="128" r="4" fill="white"/>
+  
+  <!-- Orbiting object -->
+  <circle cx="178" cy="78" r="8" fill="#ffff00"/>
+  <circle cx="178" cy="78" r="10" fill="none" stroke="#ffff00" stroke-width="1" opacity="0.4"/>
+  
+  <!-- Centripetal force arrow (blue) -->
+  <line x1="178" y1="78" x2="148" y2="108" stroke="#0080ff" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="148,108 154,100 142,104" fill="#0080ff"/>
+  
+  <!-- Velocity arrow (green) -->
+  <line x1="178" y1="78" x2="158" y2="48" stroke="#00cc00" stroke-width="2.5" stroke-linecap="round"/>
+  <polygon points="158,48 164,54 156,56" fill="#00cc00"/>
+  
+  <!-- Title text -->
+  <text x="128" y="210" text-anchor="middle" fill="white" font-family="monospace" font-size="14" font-weight="bold" opacity="0.8">F = mω²r</text>
+</svg>
